@@ -102,6 +102,7 @@ Please see also our online data augmentation experiment <br>
 This <a href="./src/TensorflowUNet.py">TensorflowUNet</a> model is slightly flexibly customizable by a configuration file.<br>
 For example, <b>TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> model can be customizable
 by using <a href="./projects/TensorflowSlightlyFlexibleUNet/Augmented-MultipleMyeloma/train_eval_infer.config">train_eval_infer.config</a>
+<br>
 <pre>
 ; train_eval_infer.config
 ; 2024/03/01 antillia.com
@@ -146,7 +147,6 @@ eval_dir      = "./eval"
 
 image_datapath = "../../../dataset/MultipleMyeloma/train/images/"
 mask_datapath  = "../../../dataset/MultipleMyeloma/train/masks/"
-;2023/06/22
 create_backup  = True
 
 ; 2024/03/01 
@@ -154,18 +154,21 @@ learning_rate_reducer = True
 reducer_patience      = 5
 
 [eval]
-image_datapath = "../../../dataset/MultipleMyeloma/valid/images/"
-mask_datapath  = "../../../dataset/MultipleMyeloma/valid/masks/"
+;image_datapath = "../../../dataset/MultipleMyeloma/valid/images/"
+;mask_datapath  = "../../../dataset/MultipleMyeloma/valid/masks/"
+image_datapath = "../../../dataset/MultipleMyeloma/test/images/"
+mask_datapath  = "../../../dataset/MultipleMyeloma/test/masks/"
 
 [infer] 
-images_dir    = "./mini_test" 
-output_dir    = "./mini_test_output"
+images_dir = "./4k_mini_test"
+output_dir = "./4k_mini_test_output"
 
 [tiledinfer] 
 overlapping = 64
 split_size  = 512
 images_dir = "./4k_mini_test"
 output_dir = "./4k_tiled_mini_test_output"
+merged_dir  = "./4k_tiled_mini_test_output_merged"
 
 [mask]
 blur      = True
@@ -173,14 +176,7 @@ blur_size = (3,3)
 binarize  = True
 ;threshold = 60
 threshold =160
-</pre>
 
-[train]
-image_datapath = "../../../dataset/MultipleMyeloma/train/images/"
-mask_datapath  = "../../../dataset/MultipleMyeloma/train/masks/"
-[eval]
-image_datapath = "../../../dataset/MultipleMyeloma/valid/images/"
-mask_datapath  = "../../../dataset/MultipleMyeloma/valid/masks/"
 </pre>
 
 Please note that we have updated <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to be able to specify <b>mish</b> as an 
@@ -193,8 +189,8 @@ The definition of mish is quite simple as shown below.<br>
 <pre>
 # Please see: https://github.com/digantamisra98/Mish/blob/master/Mish/TFKeras/mish.py
 def mish(x):
-    x = tf.convert_to_tensor(x) #Added this line
-    return tf.math.multiply(x, tf.math.tanh(tf.math.softplus(x)))
+  x = tf.convert_to_tensor(x) #Added this line
+  return tf.math.multiply(x, tf.math.tanh(tf.math.softplus(x)))
 </pre>
 
 Furthermore, we have added the following parameters to enable <b>learning_rate_reducer</b> callback in the training process of this 
