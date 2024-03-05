@@ -223,23 +223,12 @@ class TensorflowUNet:
     learning_rate  = self.config.get(MODEL, "learning_rate")
     clipvalue      = self.config.get(MODEL, "clipvalue", 0.2)
     print("--- clipvalue {}".format(clipvalue))
-  # 2023/11/10
-    optimizer = self.config.get(MODEL, "optimizer", dvalue="Adam")
-    if optimizer == "Adam":
-      self.optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate,
-         beta_1=0.9, 
-         beta_2=0.999, 
-         clipvalue=clipvalue,  #2023/06/26
+    self.optimizer = Adam(learning_rate = learning_rate, 
+         beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, 
+         clipvalue=clipvalue,  #2023/0626
          amsgrad=False)
-      print("=== Optimizer Adam learning_rate {} clipvalue {} ".format(learning_rate, clipvalue))
+    print("=== Optimizer Adam learning_rate {} clipvalue {}".format(learning_rate, clipvalue))
     
-    elif optimizer == "AdamW":
-      # 2023/11/10  Adam -> AdamW (tensorflow 2.14.0~)
-      self.optimizer = tf.keras.optimizers.AdamW(learning_rate = learning_rate,
-         clipvalue=clipvalue,
-         )
-      print("=== Optimizer AdamW learning_rate {} clipvalue {} ".format(learning_rate, clipvalue))
-            
     self.model_loaded = False
 
     # 2023/05/20 Modified to read loss and metrics from train_eval_infer.config file.
@@ -582,7 +571,7 @@ class TensorflowUNet:
       pass
       #print("== Already loaded a weight file.")
     return rc
-  
+
   # 2023/05/05 Added newly.    
   def infer(self, input_dir, output_dir, expand=True):
     colorize = self.config.get(SEGMENTATION, "colorize", dvalue=False)
@@ -617,7 +606,7 @@ class TensorflowUNet:
       # <fixed> 2023/08/05 
       img      = cv2.imread(image_file)
       # </fixed>
-      # img = BGR format 
+
       h = img.shape[0]
       w = img.shape[1]
       # Any way, we have to resize input image to match the input size of our TensorflowUNet model.
@@ -664,6 +653,7 @@ class TensorflowUNet:
   # 1 Split the original image to some tiled-images
   # 2 Infer segmentation regions on those images 
   # 3 Merge detected regions into one image
+
   # 2023/07/01
   # Added MARGIN to cropping 
   def infer_tiles(self, input_dir, output_dir, expand=True):
@@ -691,25 +681,9 @@ class TensorflowUNet:
     # 2024/03/01
     split_size  = self.config.get(TILEDINFER, "split_size", dvalue=width)
     print("---split_size {}".format(split_size))
-    # 2024/04/05 Added bitwise_blending
-    bitwise_blending  = self.config.get(TILEDINFER, "biwise_blending", dvalue=True)
-    bgcolor = self.config.get(TILEDINFER, "background", dvalue=0)  
-
+    
     for image_file in image_files:
       image = Image.open(image_file)
-      w, h    = image.size
-      resized = image.resize((width, height))
-      cv_image = self.pil2cv(resized)
-      predictions = self.predict([cv_image], expand=expand)
-          
-      prediction  = predictions[0]
-      whole_mask  = prediction[0]    
-
-      whole_mask   = self.normalize_mask(whole_mask)
-      whole_mask   = cv2.resize(whole_mask, (w, h))
-                
-      basename = os.path.basename(image_file)
-        
       w, h  = image.size
 
       vert_split_num  = h // split_size
@@ -720,6 +694,7 @@ class TensorflowUNet:
       if w % split_size != 0:
         horiz_split_num += 1
 
+      bgcolor = self.config.get(TILEDINFER, "background", dvalue=0)  
       #print("=== bgcolor {}".format(bgcolor))
       background = Image.new("L", (w, h), bgcolor)
  
@@ -733,6 +708,7 @@ class TensorflowUNet:
           if left >=w or upper >=h:
             continue 
       
+          #cropped = image.crop((left, upper, right, lower))
           #2023/06/21
           left_margin  = MARGIN
           upper_margin = MARGIN
@@ -741,6 +717,7 @@ class TensorflowUNet:
           if upper-MARGIN <0:
             upper_margin = 0
           
+          #cropped = image.crop((left-MARGIN, upper-MARGIN, right+MARGIN, lower+MARGIN ))
           rm = right + MARGIN
           lm = lower + MARGIN
 
@@ -752,59 +729,62 @@ class TensorflowUNet:
 
           cw, ch  = cropped.size
           cropped = cropped.resize((width, height))
-          # 2024/03/01
+
+          # 2024/0301
           cvimage  = self.pil2cv(cropped)
           predictions = self.predict([cvimage], expand=expand)
           
           prediction  = predictions[0]
           mask        = prediction[0]    
+
           img         = self.mask_to_image(mask)
           img         = img.resize((cw, ch))
-          
-          img         = img.crop((left_margin, upper_margin, rm, lm)) 
-          background.paste(img, (left, upper))
 
+          img         = img.convert("L")
+          #2023/06/21
+          ww, hh      = img.size
+          #img         = img.crop((MARGIN, MARGIN, ww-MARGIN, hh-MARGIN))
+          wm = ww - left_margin
+          hm = hh - upper_margin
+          if hm < upper_margin:
+            hm = upper_margin
+          if wm < left_margin:
+            wm = left_margin
+
+          #img         = img.crop((left_margin, upper_margin, wm, hm,)) # ww-left_margin, hh-upper_margin ))
+          img         = img.crop((left_margin, upper_margin, rm, lm))
+          
+          ww, hh      = img.size
+          background.paste(img, (left, upper))
+          #print("---paste j:{} i:{} ww:{} hh:{}".format(j, i, ww, hh))
+          
       basename = os.path.basename(image_file)
       output_file = os.path.join(output_dir, basename)
-
-      cv_background = self.pil2cv(background)
-      if bitwise_blending:
-        bitwised = cv2.bitwise_and(whole_mask, cv_background)
-        bitwized_output_file =  os.path.join(output_dir, basename)
-        cv2.imwrite(bitwized_output_file, bitwised)
-      else:
-        background.save(output_file)
-
+      #input("----")
+      #background = background.filter(filter=ImageFilter.BLUR)
+      background.save(output_file)
       print("=== Saved outputfile {}".format(output_file))
-
       if merged_dir !=None:
         # Resize img to the original size (w, h)
         img   = np.array(image)
         img   = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        mask  = cv_background # np.array(background)
+        mask  = np.array(background)
         mask   = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         img += mask
 
         merged_file = os.path.join(merged_dir, basename)
         cv2.imwrite(merged_file, img)     
 
+
   def mask_to_image(self, data, factor=255.0):
     h = data.shape[0]
     w = data.shape[1]
+
     data = data*factor
     data = data.reshape([w, h])
-    data = data.astype(np.uint8)
     image = Image.fromarray(data)
-    image = image.convert("RGB")
     return image
-  
-  def normalize_mask(self, data, factor=255.0):
-    h = data.shape[0]
-    w = data.shape[1]
-    data = data*factor
-    data = data.reshape([w, h])
-    data = data.astype(np.uint8)
-    return data
+
 
   def evaluate(self, x_test, y_test): 
     self.load_model()
