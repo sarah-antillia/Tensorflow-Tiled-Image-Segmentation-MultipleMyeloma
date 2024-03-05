@@ -692,7 +692,7 @@ class TensorflowUNet:
     split_size  = self.config.get(TILEDINFER, "split_size", dvalue=width)
     print("---split_size {}".format(split_size))
     # 2024/04/05 Added bitwise_blending
-    bitwise_blending  = self.config.get(TILEDINFER, "biwise_blending", dvalue=True)
+    bitwise_blending  = self.config.get(TILEDINFER, "bitwise_blending", dvalue=True)
     bgcolor = self.config.get(TILEDINFER, "background", dvalue=0)  
 
     for image_file in image_files:
