@@ -1,4 +1,4 @@
-<h2>Tensorflow-Tiled-Image-Segmentation-MultipleMyeloma(2024/03/5)</h2>
+<h2>Tensorflow-Tiled-Image-Segmentation-MultipleMyeloma(2024/03/06)</h2>
 
 This is the second experimental Tiled-Image Segmentation project for MultipleMyeloma based on
 the <a href="https://github.com/sarah-antillia/Tensorflow-Image-Segmentation-API">Tensorflow-Image-Segmentation-API</a>, and
@@ -8,11 +8,43 @@ the <a href="https://github.com/sarah-antillia/Tensorflow-Image-Segmentation-API
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/segmentation_sample.png" width="720" height="auto">
 <br>
 <br>
-<li>2024/03/05: Modified <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support bitwise_blending in infer_tiles method.</li>
-<br>
 Please see our first experiment <br>
 <a href="https://github.com/atlan-antillia/Tiled-Image-Segmentation-Multiple-Myeloma">Tiled-Image-Segmentation-Multiple-Myeloma</a>
 <br>
+<br>
+<li>2024/03/05: Modified <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support bitwise_blending in infer_tiles method.</li>
+<br>
+<b>
+Bitwise_blended_tiled_segmentation = Non_tiled_segmentation + Tiled_segmentation<br>
+</b>
+<br>
+
+<b>Example of bitwise_blending </b><br>
+<table>
+<tr>
+<td>Bitwise_blended_tiled_segmentation</td>
+<td>Non_tiled_segmentation</td>
+<td>Tiled_segmentation</td>
+</tr>
+
+<tr>
+<td>
+<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output/405.jpg" width="400" height="auto">
+</td>
+
+<td>
+<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/tiledinfer_debug/non_tiled_405.jpg" width="400" height="auto">
+</td>
+
+<td>
+<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/tiledinfer_debug/non_blended_tiled_405.jpg" width="400" height="auto">
+</td>
+
+</tr>
+
+</table>
+<br>
+
 <br>
 
 <h3>1. Dataset Citation</h3>

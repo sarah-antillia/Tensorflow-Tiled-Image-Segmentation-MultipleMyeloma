@@ -9,9 +9,7 @@ dataset/MultipleMyeloma/train/
 dataset/MultipleMyeloma/valid/
 
 projects/*/*/models/
-
-projects/*/*/generated_images_dir/
-projects/*/*/generated_masks_dir/
+#projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/tiledinfer_debug/
 
 # C extensions
 *.so

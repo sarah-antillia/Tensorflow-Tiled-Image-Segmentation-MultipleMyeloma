@@ -693,7 +693,14 @@ class TensorflowUNet:
     print("---split_size {}".format(split_size))
     # 2024/04/05 Added bitwise_blending
     bitwise_blending  = self.config.get(TILEDINFER, "bitwise_blending", dvalue=True)
-    bgcolor = self.config.get(TILEDINFER, "background", dvalue=0)  
+    bgcolor           = self.config.get(TILEDINFER, "background", dvalue=0)  
+    tiledinfer_debug  = self.config.get(TILEDINFER, "debug", dvalue=False)
+    tiledinfer_debug_dir = "./tilder_infer_debug"
+    if tiledinfer_debug:
+      if os.path.exists(tiledinfer_debug_dir):
+        shutil.rmtree(tiledinfer_debug_dir)
+      if not os.path.exists(tiledinfer_debug_dir):
+        os.makedirs(tiledinfer_debug_dir)
 
     for image_file in image_files:
       image = Image.open(image_file)
@@ -772,6 +779,13 @@ class TensorflowUNet:
         bitwised = cv2.bitwise_and(whole_mask, cv_background)
         bitwized_output_file =  os.path.join(output_dir, basename)
         cv2.imwrite(bitwized_output_file, bitwised)
+        # debug
+        if tiledinfer_debug:
+          background_output_file =  os.path.join(tiledinfer_debug_dir, "non_blended_tiled_" + basename)
+          background.save(background_output_file)
+          whole_mask_output_file =  os.path.join(tiledinfer_debug_dir, "non_tiled_" + basename)
+          cv2.imwrite(whole_mask_output_file, whole_mask) 
+                
       else:
         background.save(output_file)
 
