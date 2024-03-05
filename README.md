@@ -8,7 +8,7 @@ the <a href="https://github.com/sarah-antillia/Tensorflow-Image-Segmentation-API
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/segmentation_sample.png" width="720" height="auto">
 <br>
 <br>
-<li>2024/03/05: Modified <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support biwise_blending in infer_tiles method.</li>
+<li>2024/03/05: Modified <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support bitwise_blending in infer_tiles method.</li>
 <br>
 Please see our first experiment <br>
 <a href="https://github.com/atlan-antillia/Tiled-Image-Segmentation-Multiple-Myeloma">Tiled-Image-Segmentation-Multiple-Myeloma</a>
