@@ -324,8 +324,6 @@ Sample test mask (ground_truth)<br>
 Inferred 4k_tiled_mini_test masks<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/4k_tiled_mini_test_output.png" width="1024" height="auto"><br>
 <br>
-In this case, apparently, TensorflowTiledInferencer has detected more segmentation regions compared to TensorflowUNetInferencer.<br>
-<br>
 Inferred 4k_tiled_mini_test_output_merged<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/4k_tiled_mini_test_output_merged.png" width="1024" height="auto"><br>
 <br>
