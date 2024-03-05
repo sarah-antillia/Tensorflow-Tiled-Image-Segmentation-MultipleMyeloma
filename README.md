@@ -26,22 +26,17 @@ Bitwise_blended_tiled_segmentation = Non_tiled_segmentation + Tiled_segmentation
 <td>Non_tiled_segmentation</td>
 <td>Tiled_segmentation</td>
 </tr>
-
 <tr>
-<td>
+<td width="330">
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output/405.jpg" width="330" height="auto">
 </td>
-
-<td>
+<td width="330">
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/tiledinfer_debug/non_tiled_405.jpg" width="330" height="auto">
 </td>
-
-<td>
+<td width="330">
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/tiledinfer_debug/non_blended_tiled_405.jpg" width="330" height="auto">
 </td>
-
 </tr>
-
 </table>
 <br>
 
