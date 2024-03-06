@@ -14,11 +14,13 @@ Please see our first experiment <br>
 <br>
 <li>2024/03/05: Modified <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support bitwise_blending in infer_tiles method.</li>
 <br>
+
 <b>
 Bitwise_blended_tiled_segmentation = Non_tiled_segmentation + Tiled_segmentation<br>
 </b>
 <br>
-
+<b>Bitwise_blended_tiled_segmentation</b> image is created by applying Bitwise-AND operation to <b>Non_tiled_segmentation</b> and
+<b>Tiled_segmentation</b> images.<br>
 <b>Example of bitwise_blending </b><br>
 <img src ="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/Bitwise_blended_tiled_segmentation.png" width="1024" height="auto"><br>
 
