@@ -688,35 +688,53 @@ class TensorflowUNet:
     width  = self.config.get(MODEL, "image_width")
     height = self.config.get(MODEL, "image_height")
 
-    # 2024/03/01
     split_size  = self.config.get(TILEDINFER, "split_size", dvalue=width)
     print("---split_size {}".format(split_size))
-    # 2024/04/05 Added bitwise_blending
-    bitwise_blending  = self.config.get(TILEDINFER, "bitwise_blending", dvalue=True)
-    bgcolor           = self.config.get(TILEDINFER, "background", dvalue=0)  
-    tiledinfer_debug  = self.config.get(TILEDINFER, "debug", dvalue=False)
-    tiledinfer_debug_dir = "./tilder_infer_debug"
+    
+    tiledinfer_debug = self.config.get(TILEDINFER, "debug", dvalue=False)
+    tiledinfer_debug_dir = "./tiledinfer_debug_dir"
     if tiledinfer_debug:
       if os.path.exists(tiledinfer_debug_dir):
         shutil.rmtree(tiledinfer_debug_dir)
       if not os.path.exists(tiledinfer_debug_dir):
         os.makedirs(tiledinfer_debug_dir)
+ 
+    # Please note that the default setting is "True".
+    bitwise_blending  = self.config.get(TILEDINFER, "bitwise_blending", dvalue=True)
+    bgcolor = self.config.get(TILEDINFER, "background", dvalue=0)  
 
     for image_file in image_files:
-      image = Image.open(image_file)
+      image   = Image.open(image_file)
       w, h    = image.size
+
+      # Resize the image to the input size (width, height) of our UNet model.      
       resized = image.resize((width, height))
-      cv_image = self.pil2cv(resized)
+
+      # Make a prediction to the whole image not tiled image of the image_file 
+      cv_image= self.pil2cv(resized)
       predictions = self.predict([cv_image], expand=expand)
           
       prediction  = predictions[0]
       whole_mask  = prediction[0]    
 
-      whole_mask   = self.normalize_mask(whole_mask)
-      whole_mask   = cv2.resize(whole_mask, (w, h))
+      whole_mask  = self.normalize_mask(whole_mask)
+      whole_mask  = cv2.resize(whole_mask, (w, h))
                 
       basename = os.path.basename(image_file)
-        
+      self.tiledinfer_log = None
+      
+      if tiledinfer_debug and os.path.exists(tiledinfer_debug_dir):
+        tiled_images_output_dir = os.path.join(tiledinfer_debug_dir, basename + "/images")
+        tiled_masks_output_dir  = os.path.join(tiledinfer_debug_dir, basename + "/masks")
+        if os.path.exists(tiled_images_output_dir):
+          shutil.rmtree(tiled_images_output_dir)
+        if not os.path.exists(tiled_images_output_dir):
+          os.makedirs(tiled_images_output_dir)
+        if os.path.exists(tiled_masks_output_dir):
+          shutil.rmtree(tiled_masks_output_dir)
+        if not os.path.exists(tiled_masks_output_dir):
+          os.makedirs(tiled_masks_output_dir)
+         
       w, h  = image.size
 
       vert_split_num  = h // split_size
@@ -727,9 +745,9 @@ class TensorflowUNet:
       if w % split_size != 0:
         horiz_split_num += 1
 
-      #print("=== bgcolor {}".format(bgcolor))
       background = Image.new("L", (w, h), bgcolor)
- 
+
+      # Tiled image segmentation
       for j in range(vert_split_num):
         for i in range(horiz_split_num):
           left  = split_size * i
@@ -740,63 +758,93 @@ class TensorflowUNet:
           if left >=w or upper >=h:
             continue 
       
-          #2023/06/21
           left_margin  = MARGIN
           upper_margin = MARGIN
           if left-MARGIN <0:
             left_margin = 0
           if upper-MARGIN <0:
             upper_margin = 0
+
+          right_margin = MARGIN
+          lower_margin = MARGIN 
+          if right + right_margin > w:
+            right_margin = 0
+          if lower + lower_margin > h:
+            lower_margin = 0
+
+          cropbox = (left  - left_margin,  upper - upper_margin, 
+                     right + right_margin, lower + lower_margin )
           
-          rm = right + MARGIN
-          lm = lower + MARGIN
+          # Crop a region specified by the cropbox from the whole image to create a tiled image segmentation.      
+          cropped = image.crop(cropbox)
 
-          if rm >= w:
-            rm = w
-          if lm >= h:
-            lm = h
-          cropped = image.crop((left-left_margin, upper-upper_margin, rm, lm ))
-
+          # Get the size of the cropped image.
           cw, ch  = cropped.size
+
+          # Resize the cropped image to the model image size (width, height) for a prediction.
           cropped = cropped.resize((width, height))
-          # 2024/03/01
+          if tiledinfer_debug:
+            #line = "image file {}x{} : x:{} y:{} width: {} height:{}\n".format(j, i, left, upper, cw, ch)
+            #print(line)            
+            cropped_image_filename = str(j) + "x" + str(i) + ".jpg"
+            cropped.save(os.path.join(tiled_images_output_dir, cropped_image_filename))
+
           cvimage  = self.pil2cv(cropped)
           predictions = self.predict([cvimage], expand=expand)
           
           prediction  = predictions[0]
           mask        = prediction[0]    
-          img         = self.mask_to_image(mask)
-          img         = img.resize((cw, ch))
-          
-          img         = img.crop((left_margin, upper_margin, rm, lm)) 
-          background.paste(img, (left, upper))
+          mask        = self.mask_to_image(mask)
+
+          # Resize the mask to the same size of the corresponding the cropped_size (cw, ch)
+          mask        = mask.resize((cw, ch))
+
+          right_position = left_margin + width
+          if right_position > cw:
+             right_position = cw
+
+          bottom_position = upper_margin + height
+          if bottom_position > ch:
+             bottom_position = ch
+
+          # Excluding margins of left, upper, right and bottom from the mask. 
+          mask         = mask.crop((left_margin, upper_margin, 
+                                  right_position, bottom_position)) 
+          iw, ih = mask.size
+          if tiledinfer_debug:
+            #line = "mask  file {}x{} : x:{} y:{} width: {} height:{}\n".format(j, i,  left, upper, iw, ih)
+            #print(line)
+            cropped_mask_filename = str(j) + "x" + str(i) + ".jpg"
+            mask.save(os.path.join(tiled_masks_output_dir , cropped_mask_filename))
+          # Paste the tiled mask to the background. 
+          background.paste(mask, (left, upper))
 
       basename = os.path.basename(image_file)
       output_file = os.path.join(output_dir, basename)
 
       cv_background = self.pil2cv(background)
+      bitwised = None
       if bitwise_blending:
+        # Blend the non-tiled whole_mask and the tiled-backcround
         bitwised = cv2.bitwise_and(whole_mask, cv_background)
         bitwized_output_file =  os.path.join(output_dir, basename)
         cv2.imwrite(bitwized_output_file, bitwised)
-        # debug
-        if tiledinfer_debug:
-          background_output_file =  os.path.join(tiledinfer_debug_dir, "non_blended_tiled_" + basename)
-          background.save(background_output_file)
-          whole_mask_output_file =  os.path.join(tiledinfer_debug_dir, "non_tiled_" + basename)
-          cv2.imwrite(whole_mask_output_file, whole_mask) 
-                
       else:
+        # Save the tiled-background. 
         background.save(output_file)
 
       print("=== Saved outputfile {}".format(output_file))
 
       if merged_dir !=None:
-        # Resize img to the original size (w, h)
         img   = np.array(image)
         img   = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        mask  = cv_background # np.array(background)
-        mask   = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        #2024/03/10
+        if bitwise_blending:
+          mask = bitwised
+        else:
+          mask  = cv_background 
+ 
+        mask  = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         img += mask
 
         merged_file = os.path.join(merged_dir, basename)

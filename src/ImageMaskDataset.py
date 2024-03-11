@@ -56,8 +56,15 @@ class ImageMaskDataset(BaseImageMaskDataset):
                        interpolation=self.resize_interpolation)                       
  
     if self.binarize:
-      mask[mask< self.threshold] =   0
-      mask[mask>=self.threshold] = 255
+      if  self.algorithm == cv2.THRESH_TRIANGLE or self.algorithm == cv2.THRESH_OTSU: 
+        _, mask = cv2.threshold(mask, 0, 255, self.algorithm)
+      if  self.algorithm == cv2.THRESH_BINARY or self.algorithm ==  cv2.THRESH_TRUNC: 
+        #_, mask = cv2.threshold(mask, 127, 255, self.algorithm)
+        _, mask = cv2.threshold(mask, self.threshold, 255, self.algorithm)
+
+      elif self.algorithm == None:
+        mask[mask< self.threshold] =   0
+        mask[mask>=self.threshold] = 255
 
     # Blur mask 
     if self.blur_mask:

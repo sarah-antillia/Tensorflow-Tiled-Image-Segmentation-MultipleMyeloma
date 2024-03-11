@@ -1,4 +1,4 @@
-<h2>Tensorflow-Tiled-Image-Segmentation-MultipleMyeloma(2024/03/06)</h2>
+<h2>Tensorflow-Tiled-Image-Segmentation-MultipleMyeloma(2024/03/12)</h2>
 
 This is the second experimental Tiled-Image Segmentation project for MultipleMyeloma based on
 the <a href="https://github.com/sarah-antillia/Tensorflow-Image-Segmentation-API">Tensorflow-Image-Segmentation-API</a>, and
@@ -13,14 +13,18 @@ Please see our first experiment <br>
 <br>
 <br>
 <li>2024/03/05: Modified <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support bitwise_blending in infer_tiles method.</li>
+
+<li>2024/03/12: Fixed a bug in the infer_tiles method of <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> when a merged_dir specified.</li>
+<li>2024/03/12: Modified the infer_tiles method of <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to support a debug.</li>
+
 <br>
 
 <b>
-Bitwise_blended_tiled_segmentation = Non_tiled_segmentation + Tiled_segmentation<br>
+Bitwise_Blended_Tiled_Segmentation = Non_Tiled_Segmentation + Tiled_Segmentation<br>
 </b>
 <br>
-<b>Bitwise_blended_tiled_segmentation</b> image is created by applying Bitwise-AND operation to <b>Non_tiled_segmentation</b> and
-<b>Tiled_segmentation</b> images.<br><br>
+<b>Bitwise_Blended_Tiled_Segmentation</b> image is created by applying Bitwise-AND operation to <b>Non_Tiled_Segmentation</b> and
+<b>Tiled_Segmentation</b> images.<br><br>
 
 <b>Example of bitwise_blending </b><br>
 <img src ="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/Bitwise_blended_tiled_segmentation.png" width="1024" height="auto"><br>
@@ -119,12 +123,17 @@ by using <a href="./projects/TensorflowSlightlyFlexibleUNet/Augmented-MultipleMy
 <br>
 <pre>
 ; train_eval_infer.config
-; 2024/03/01 antillia.com
+; 2024/03/12 antillia.com
 ; Added the following setting to [train] section, 
 ; , which enables to add learning_rate_reducer callback if True.
 ;learning_rate_reducer = True
 ; Added the following setting to [model] section
 ; activation     = "mish"
+
+; 2024/03/12
+; [tiledinfer] 
+; images_dir = "../../../4k_mini_test"
+; debug      = True
 
 [model]
 ; Specify a className of UNetModel
@@ -161,6 +170,7 @@ eval_dir      = "./eval"
 
 image_datapath = "../../../dataset/MultipleMyeloma/train/images/"
 mask_datapath  = "../../../dataset/MultipleMyeloma/train/masks/"
+;2023/06/22
 create_backup  = True
 
 ; 2024/03/01 
@@ -174,15 +184,16 @@ image_datapath = "../../../dataset/MultipleMyeloma/test/images/"
 mask_datapath  = "../../../dataset/MultipleMyeloma/test/masks/"
 
 [infer] 
-images_dir = "./4k_mini_test"
+images_dir = "../../../4k_mini_test"
 output_dir = "./4k_mini_test_output"
 
 [tiledinfer] 
 overlapping = 64
 split_size  = 512
-images_dir = "./4k_mini_test"
-output_dir = "./4k_tiled_mini_test_output"
+images_dir  = "../../../4k_mini_test"
+output_dir  = "./4k_tiled_mini_test_output"
 merged_dir  = "./4k_tiled_mini_test_output_merged"
+debug       = True
 
 [mask]
 blur      = True
@@ -190,7 +201,6 @@ blur_size = (3,3)
 binarize  = True
 ;threshold = 60
 threshold =160
-
 </pre>
 
 Please note that we have updated <a href="./src/TensorflowUNet.py">TensorflowUNet.py</a> to be able to specify <b>mish</b> as an 
@@ -223,11 +233,12 @@ reducer = ReduceLROnPlateau(
            min_lr  = 0.0)
 </pre>
 
+
 <br>
 <h3>
 3.1 Training
 </h3>
-Please move to a <b>./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> folder,<br>
+Please move to the <b>./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> folder,<br>
 and run the following bat file to train TensorflowUNet model for MultipleMyeloma.<br>
 <pre>
 ./1.train.bat
@@ -285,7 +296,7 @@ Test accuracy:0.9589999914169312
 <h2>
 3.3 Inference
 </h2>
-Please move to a <b>./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> folder<br>
+Please move to the <b>./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> folder<br>
 ,and run the following bat file to infer segmentation regions for images by the Trained-TensorflowUNet model for MultipleMyeloma.<br>
 <pre>
 ./3.infer.bat
@@ -315,7 +326,7 @@ This inference result is slightly different from that of the online-augmentation
 <h2>
 3.4 Tiled-Inference
 </h2>
-Please move to a <b>./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> folder<br>
+Please move to the <b>./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma</b> folder<br>
 ,and run the following bat file to infer segmentation regions for images by the Trained-TensorflowUNet model for MultipleMyeloma.<br>
 <pre>
 ./4.tiled_infer.bat
@@ -326,6 +337,20 @@ in the following way.
 <pre>
 python ../../../src/TensorflowUNetTiledInferencer.py ./train_eval_infer.config
 </pre>
+Please note that you can specify the debug parameter in [tiledinfer] section.
+<pre>
+[tiledinfer] 
+debug       = True
+</pre>
+For example, you can identify the tiled_images and the corresponding inferred masks generated from 405.jpg input file as shown below.
+<br>
+Tiled-405jpg-Images :<br>
+<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/tiledinfer_debug_405.jpg_images.png" width="1024" height="auto"><br>
+Inferred-Tiled-405jpg-Masks:<br>
+<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/tiledinfer_debug_405.jpg_masks.png"  width="1024" height="auto"><br>
+<br>
+
+<br>
 4k_mini test images<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/asset/4k_mini_test.png" width="1024" height="auto"><br>
 <!--
@@ -346,55 +371,55 @@ Enlarged samples<br>
 
 <tr>
 <td>
-mini_test/605.jpg<br>
-<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_mini_test/605.jpg" width="512" height="auto">
+4k_mini_test/605.jpg<br>
+<img src="./4k_mini_test/605.jpg" width="512" height="auto">
 </td>
 <td>
-Inferred merged/605.jpg<br>
+Inferred 4k_merged/605.jpg<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output_merged/605.jpg" width="512" height="auto">
 </td> 
 </tr>
 
 <tr>
 <td>
-mini_test/1735.jpg<br>
-<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_mini_test/1735.jpg" width="512" height="auto">
+4k_mini_test/1735.jpg<br>
+<img src="./4k_mini_test/1735.jpg" width="512" height="auto">
 </td>
 <td>
-Inferred merged/1735.jpg<br>
+Inferred 4k_merged/1735.jpg<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output_merged/1735.jpg" width="512" height="auto">
 </td> 
 </tr>
 
 <tr>
 <td>
-mini_test/1923.jpg<br>
-<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_mini_test/1923.jpg" width="512" height="auto">
+4k_mini_test/1923.jpg<br>
+<img src="./4k_mini_test/1923.jpg" width="512" height="auto">
 </td>
 <td>
-Inferred merged/1923.jpg<br>
+Inferred 4k_merged/1923.jpg<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output_merged/1923.jpg" width="512" height="auto">
 </td> 
 </tr>
 
 <tr>
 <td>
-mini_test/2123.jpg<br>
-<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_mini_test/2123.jpg" width="512" height="auto">
+4k_mini_test/2123.jpg<br>
+<img src="./4k_mini_test/2123.jpg" width="512" height="auto">
 </td>
 <td>
-Inferred merged/2123.jpg<br>
+Inferred 4k_merged/2123.jpg<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output_merged/2123.jpg" width="512" height="auto">
 </td> 
 </tr>
 
 <tr>
 <td>
-mini_test/2405.jpg<br>
-<img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_mini_test/2405.jpg" width="512" height="auto">
+4k_mini_test/2405.jpg<br>
+<img src="./4k_mini_test/2405.jpg" width="512" height="auto">
 </td>
 <td>
-Inferred merged/2123.jpg<br>
+Inferred 4k_merged/2123.jpg<br>
 <img src="./projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/4k_tiled_mini_test_output_merged/2405.jpg" width="512" height="auto">
 </td> 
 </tr>

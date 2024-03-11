@@ -11,6 +11,10 @@ dataset/MultipleMyeloma/valid/
 projects/*/*/models/
 #projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma/tiledinfer_debug/
 
+# 2024/03/12
+projects/TensorflowSlightlyFlexibleUNet/MultipleMyeloma-V5/
+projects/*/*/tiledinfer_debug_dir/
+
 # C extensions
 *.so
 
